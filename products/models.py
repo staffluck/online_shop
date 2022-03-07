@@ -18,7 +18,7 @@ class ProductItem(models.Model):
 
 class Deal(models.Model):
     product_item = models.OneToOneField(ProductItem, models.CASCADE, related_name="deal", verbose_name="Предмет Продукта")
-    buyer = models.ForeignKey(User, models.SET_NULL, relanted_name="deals", verbose_name="Покупатель", null=True)
+    buyer = models.ForeignKey(User, models.SET_NULL, related_name="deals", verbose_name="Покупатель", null=True)
     cost = models.IntegerField("Итоговая стоимость")
 
     # messages = todo
