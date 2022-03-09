@@ -4,11 +4,12 @@ from django.contrib.auth.models import AbstractUser
 
 from uuid import uuid4
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 def get_expire_time():
     expire_minutes = settings.EMAIL_AUTHORIZATION_EXPIRE
-    return datetime.now() + timedelta(minutes=expire_minutes)
+    return timezone.now() + timedelta(minutes=expire_minutes)
 
 
 class User(AbstractUser):
