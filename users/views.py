@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -26,7 +24,7 @@ class EmailAuthorizationLetterSendView(APIView):
         except User.DoesNotExist:
             user = None
 
-        if user:
+        if user and user.account_type != User.SELLER:
             try:
                 EmailAuthorizationLetter.objects.get(user=user).delete()
             except EmailAuthorizationLetter.DoesNotExist:

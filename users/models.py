@@ -1,9 +1,9 @@
+from uuid import uuid4
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
-from uuid import uuid4
-from datetime import datetime, timedelta
 from django.utils import timezone
 
 
@@ -13,6 +13,15 @@ def get_expire_time():
 
 
 class User(AbstractUser):
+    BUYER = 0
+    SELLER = 1
+    ACCOUNT_TYPES = (
+        (BUYER, "Buyer"),
+        (SELLER, "Seller"),
+    )
+    REQUIRED_FIELDS = AbstractUser.REQUIRED_FIELDS + ["account_type"]
+
+    account_type = models.IntegerField(default=1, choices=ACCOUNT_TYPES)
     email = models.EmailField("Почтовый адрес", unique=True)
 
 
