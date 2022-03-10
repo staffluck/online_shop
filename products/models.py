@@ -1,4 +1,7 @@
+from random import choice
+
 from django.db import models
+
 from users.models import User
 
 class Product(models.Model):
@@ -8,16 +11,25 @@ class Product(models.Model):
     description = models.TextField("Описание", max_length=1000)
     purchased_count = models.IntegerField("Количество купленных копий", default=0)
 
+    def get_random_item(self):
+        #  TODO проверить другие способы рандома. order_by(?) не вариант
+        items = self.items.filter(available=True)
+        if items:
+            return choice(items)
+        return False
 
 class ProductItem(models.Model):
     product = models.ForeignKey(Product, models.SET_NULL, related_name="items", verbose_name="Продукт", null=True)
     text = models.TextField("Текстовый вариант товара", max_length=100)
+    available = models.BooleanField(default=True)
 
     # file = todo
 
 
 class Deal(models.Model):
+    uuid = models.UUIDField()
     product_item = models.OneToOneField(ProductItem, models.CASCADE, related_name="deal", verbose_name="Предмет Продукта")
+    payment_confirmed = models.BooleanField(default=False)
     buyer = models.ForeignKey(User, models.SET_NULL, related_name="deals", verbose_name="Покупатель", null=True)
     cost = models.IntegerField("Итоговая стоимость")
 

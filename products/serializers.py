@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import Product, ProductItem, Deal
 from users.serializers import UserSerializer
 
@@ -17,13 +18,28 @@ class ProductItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductItem
-        fields = "__all__"
+        exclude = ("available", )
 
 
 class DealSerializer(serializers.ModelSerializer):
-    product_item = ProductItemSerializer(read_only=True)
+    product_item = serializers.SerializerMethodField()
     buyer = UserSerializer(read_only=True)
 
     class Meta:
         model = Deal
         fields = "__all__"
+
+    def get_product_item(self, obj):
+        if obj.payment_confirmed:
+            return ProductItemSerializer(obj.product_item).data
+
+        serializer = ProductSerializer(obj.product_item.product)
+        hidden_data = {
+            "text": "-",
+            "id": "-1",
+            "product": serializer.data
+        }
+        return hidden_data
+
+class ProductBuySerializer(serializers.Serializer):
+    email = serializers.EmailField()

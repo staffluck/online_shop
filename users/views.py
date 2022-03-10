@@ -1,7 +1,6 @@
 from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from djoser.utils import login_user
@@ -12,7 +11,6 @@ from .models import User, EmailAuthorizationLetter
 
 
 class EmailAuthorizationLetterSendView(APIView):
-    permission_classes = [AllowAny, ]
 
     def post(self, request):
         serializer = EmailAuthenticationLetterSendSerializer(data=request.data)
@@ -42,7 +40,6 @@ class EmailAuthorizationLetterSendView(APIView):
 
 
 class EmailAuthorizationLetterProcessing(APIView):
-    permission_classes = [AllowAny, ]
 
     def get(self, request, uuid):
         try:
