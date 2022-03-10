@@ -1,4 +1,4 @@
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -8,6 +8,7 @@ from users.models import User
 from .serializers import DealSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
+
 
 class ProductListCreateView(ListCreateAPIView):
     queryset = Product.objects.all()
@@ -68,3 +69,13 @@ class ProductBuyView(APIView):
         deal = Deal.objects.create(uuid=kassa_request["id"], buyer=user, product_item=product_item, cost=kassa_request["amount"]["value"])
 
         return Response(DealSerializer(instance=deal).data, status=200)
+
+
+class DealListView(ListAPIView):
+    serializer_class = DealSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.account_type == User.SELLER:
+            return Deal.objects.filter(owner=user)
+        return Deal.objects.filter(buyer=user)
