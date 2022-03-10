@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from .models import Product, ProductItem, Deal
 from users.serializers import UserSerializer
@@ -29,6 +30,7 @@ class DealSerializer(serializers.ModelSerializer):
         model = Deal
         fields = "__all__"
 
+    @extend_schema_field(ProductItemSerializer)
     def get_product_item(self, obj):
         if obj.payment_confirmed:
             return ProductItemSerializer(obj.product_item).data

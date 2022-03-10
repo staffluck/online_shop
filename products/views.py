@@ -1,8 +1,9 @@
-from rest_framework.generics import ListCreateAPIView, ListAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView, GenericAPIView
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 
 from users.models import User
 from .serializers import DealSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
@@ -20,8 +21,9 @@ class ProductListCreateView(ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class ProductItemAddToProductView(APIView):
+class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
+    serializer_class = ProductItemSerializer
 
     def post(self, request, pk):
         try:
@@ -38,8 +40,12 @@ class ProductItemAddToProductView(APIView):
         return Response(serializer.data, 200)
 
 
-class ProductBuyView(APIView):
+class ProductBuyView(GenericAPIView):
+    serializer_class = ProductBuySerializer
 
+    @extend_schema(
+        responses=DealSerializer
+    )
     def post(self, request, pk):
         try:
             product = Product.objects.select_related("owner").get(id=pk)
