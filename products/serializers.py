@@ -45,3 +45,8 @@ class DealSerializer(serializers.ModelSerializer):
 
 class ProductBuySerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class DealStatusUpdateSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField()
+    status = serializers.CharField()

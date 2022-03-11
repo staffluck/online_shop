@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
 from users.models import User
-from .serializers import DealSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
+from .serializers import DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
@@ -33,7 +33,7 @@ class ProductItemAddToProductView(GenericAPIView):
         if not product.owner == request.user:
             raise PermissionDenied()
 
-        serializer = ProductItemSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(product=product)
 
@@ -44,7 +44,7 @@ class ProductBuyView(GenericAPIView):
     serializer_class = ProductBuySerializer
 
     @extend_schema(
-        responses=DealSerializer
+        responses={201: DealSerializer, 404: None}
     )
     def post(self, request, pk):
         try:
@@ -52,7 +52,7 @@ class ProductBuyView(GenericAPIView):
         except Product.DoesNotExist:
             raise NotFound()
 
-        serializer = ProductBuySerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.data["email"]
@@ -85,3 +85,22 @@ class DealListView(ListAPIView):
         if user.account_type == User.SELLER:
             return Deal.objects.filter(owner=user)
         return Deal.objects.filter(buyer=user)
+
+
+class DealStatusUpdateView(GenericAPIView):
+    serializer_class = DealStatusUpdateSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.data
+        try:
+            deal = Deal.objects.get(uuid=data["uuid"])
+        except Deal.DoesNotExist:
+            raise NotFound()
+
+        if data["status"] == "confirmed":
+            deal.payment_confirmed = True
+            deal.save()
+
+        return Response(status=200)
