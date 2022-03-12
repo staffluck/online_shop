@@ -79,8 +79,11 @@ class ProductBuyView(GenericAPIView):
 
 class DealListView(ListAPIView):
     serializer_class = DealSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Deal.objects.none()
         user = self.request.user
         if user.account_type == User.SELLER:
             return Deal.objects.filter(owner=user)
@@ -90,6 +93,7 @@ class DealListView(ListAPIView):
 class DealStatusUpdateView(GenericAPIView):
     serializer_class = DealStatusUpdateSerializer
 
+    @extend_schema(responses={200: None})
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

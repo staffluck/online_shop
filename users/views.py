@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.utils import timezone
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from djoser.utils import login_user
@@ -10,7 +10,8 @@ from .serializers import EmailAuthenticationLetterSendSerializer
 from .models import User, EmailAuthorizationLetter
 
 
-class EmailAuthorizationLetterSendView(APIView):
+class EmailAuthorizationLetterSendView(GenericAPIView):
+    serializer_class = EmailAuthenticationLetterSendSerializer
 
     def post(self, request):
         serializer = EmailAuthenticationLetterSendSerializer(data=request.data)
@@ -39,7 +40,7 @@ class EmailAuthorizationLetterSendView(APIView):
         return Response(status=200)
 
 
-class EmailAuthorizationLetterProcessing(APIView):
+class EmailAuthorizationLetterProcessing(GenericAPIView):
 
     def get(self, request, uuid):
         try:
