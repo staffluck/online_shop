@@ -48,9 +48,13 @@ class ProductBuyView(GenericAPIView):
     )
     def post(self, request, pk):
         try:
-            product = Product.objects.select_related("owner").get(id=pk)
+            product = Product.objects.get(id=pk)
         except Product.DoesNotExist:
             raise NotFound()
+
+        product_item = product.get_random_item()
+        if not product_item:
+            raise NotFound("Нет доступных товаров")
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -65,10 +69,6 @@ class ProductBuyView(GenericAPIView):
 
         confirmation_url = request.build_absolute_uri("/products/deals/")
         kassa_request = simulate_request_to_kassa(confirmation_url, product.price)
-
-        product_item = product.get_random_item()
-        if not product_item:
-            raise NotFound("Нет доступных товаров")
 
         product_item.available = False
         product_item.save()

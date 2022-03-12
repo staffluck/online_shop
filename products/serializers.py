@@ -11,7 +11,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = "__all__"
-        read_only_fields = ['purchased_count', ]
+        read_only_fields = ['purchased_count', 'available']
 
 
 class ProductItemSerializer(serializers.ModelSerializer):

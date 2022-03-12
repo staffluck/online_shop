@@ -1,6 +1,7 @@
 from random import choice
 
 from django.db import models
+from django.dispatch import receiver
 
 from users.models import User
 
@@ -10,6 +11,7 @@ class Product(models.Model):
     price = models.IntegerField("Цена", db_index=True)
     description = models.TextField("Описание", max_length=1000)
     purchased_count = models.IntegerField("Количество купленных копий", default=0)
+    available = models.BooleanField(default=False)
 
     def get_random_item(self):
         #  TODO проверить другие способы рандома. order_by(?) не вариант
@@ -24,6 +26,13 @@ class ProductItem(models.Model):
     available = models.BooleanField(default=True)
 
     # file = todo
+
+@receiver(models.signals.post_save, sender=ProductItem)
+def product_set_to_available(sender, **kwargs):
+    product = sender.product
+    if not product.available:
+        product.available = True
+        product.save(update_fields=["available"])
 
 
 class Deal(models.Model):
