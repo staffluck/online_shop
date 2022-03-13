@@ -30,20 +30,22 @@ class ProductItem(models.Model):
 @receiver(models.signals.post_save, sender=ProductItem)
 def product_set_to_available(sender, instance, created, **kwargs):
     product = instance.product
-    if not product.available:
-        if created:
-            product.available = True
-            product.save(update_fields=["available"])
-        else:
-            if product.items.filter(available=True).count() == 0:
-                product.available = False
-                product.save(update_fields=["available"])
+    if product.items.filter(available=True).count() == 0:
+        product.available = False
+    else:
+        product.available = True
+    product.save(update_fields=["available"])
 
 
 class Deal(models.Model):
+    STATUSES = (
+        ("confirmed", "confirmed"),
+        ("pending", "pending")
+    )
+
     uuid = models.UUIDField()
     product_item = models.OneToOneField(ProductItem, models.CASCADE, related_name="deal", verbose_name="Предмет Продукта")
-    payment_confirmed = models.BooleanField(default=False)
+    status = models.CharField(max_length=30, choices=STATUSES, default="pending")
     buyer = models.ForeignKey(User, models.SET_NULL, related_name="deals", verbose_name="Покупатель", null=True)
     cost = models.IntegerField("Итоговая стоимость")
 

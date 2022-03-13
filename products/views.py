@@ -2,7 +2,7 @@ from rest_framework.generics import ListCreateAPIView, ListAPIView, GenericAPIVi
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.serializers import ValidationError
 from drf_spectacular.utils import extend_schema
 
 from users.models import User
@@ -16,6 +16,11 @@ class ProductListCreateView(ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, ]
     filterset_fields = ['name', ]
+
+    def post(self, request, *args, **kwargs):
+        if request.user.account_type == User.BUYER:
+            raise PermissionDenied()
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -56,10 +61,15 @@ class ProductBuyView(GenericAPIView):
         if not product_item:
             raise NotFound("Нет доступных товаров")
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not request.user.is_authenticated:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid()
+            email = serializer.data.get("email")
+            if not email:
+                raise ValidationError({"email": "Обязательное поле"})
+        else:
+            email = request.user.email
 
-        email = serializer.data["email"]
         user_data = User.objects.get_or_create(email=email, defaults={"username": email, "account_type": 0})  # username = ? TODO
         user = user_data[0]
         user_created = user_data[1]
@@ -86,7 +96,7 @@ class DealListView(ListAPIView):
             return Deal.objects.none()
         user = self.request.user
         if user.account_type == User.SELLER:
-            return Deal.objects.filter(owner=user)
+            return Deal.objects.filter(product_item__product__owner=user)
         return Deal.objects.filter(buyer=user)
 
 
@@ -103,8 +113,16 @@ class DealStatusUpdateView(GenericAPIView):
         except Deal.DoesNotExist:
             raise NotFound()
 
+        product = deal.product_item.product
         if data["status"] == "confirmed":
-            deal.payment_confirmed = True
+            deal.status = "confirmed"
+            product.purchased_count += 1
+            product.save()
             deal.save()
+        elif data["status"] == "canceled":
+            product_item = deal.product_item
+            product_item.available = True
+            product_item.save()
+            deal.delete()
 
         return Response(status=200)

@@ -28,23 +28,23 @@ class DealSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deal
-        fields = "__all__"
+        fields = "__all__"  # exclude = ("uuid", ) в реальном проекте
 
     @extend_schema_field(ProductItemSerializer)
     def get_product_item(self, obj):
-        if obj.payment_confirmed:
+        if obj.status == "confirmed":
             return ProductItemSerializer(obj.product_item).data
 
         serializer = ProductSerializer(obj.product_item.product)
         hidden_data = {
-            "text": "-",
             "id": "-1",
-            "product": serializer.data
+            "product": serializer.data,
+            "text": "-",
         }
         return hidden_data
 
 class ProductBuySerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False)
 
 
 class DealStatusUpdateSerializer(serializers.Serializer):
