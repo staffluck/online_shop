@@ -20,7 +20,7 @@ class User(AbstractUser):
         (SELLER, "Seller"),
     )
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", ]
+    REQUIRED_FIELDS = []
 
     account_type = models.IntegerField(default=1, choices=ACCOUNT_TYPES)
     email = models.EmailField("Почтовый адрес", unique=True)
