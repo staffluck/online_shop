@@ -42,7 +42,7 @@ class ProductItemAddToProductView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(product=product)
 
-        return Response(serializer.data, 200)
+        return Response(serializer.data, 201)
 
 
 class ProductBuyView(GenericAPIView):

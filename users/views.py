@@ -1,6 +1,5 @@
 from smtplib import SMTPException
 
-
 from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.generics import GenericAPIView
@@ -8,11 +7,16 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from djoser.utils import login_user
 from djoser.conf import settings
+from djoser.serializers import TokenSerializer
+from drf_spectacular.extensions import OpenApiViewExtension
+from drf_spectacular.utils import extend_schema
+
 
 from .serializers import EmailAuthenticationLetterSendSerializer
 from .models import User, EmailAuthorizationLetter
 
 
+@extend_schema(responses={200: None})
 class EmailAuthorizationLetterSendView(GenericAPIView):
     serializer_class = EmailAuthenticationLetterSendSerializer
 
@@ -62,3 +66,14 @@ class EmailAuthorizationLetterProcessing(GenericAPIView):
         else:
             letter.delete()
             raise NotFound()
+
+
+class TokenSchemaUpdate(OpenApiViewExtension):  # Отдельный файл? TODO
+    target_class = "djoser.views.TokenCreateView"
+
+    def view_replacement(self):
+
+        @extend_schema(responses=TokenSerializer)
+        class Fixed(self.target_class):
+            pass
+        return Fixed
