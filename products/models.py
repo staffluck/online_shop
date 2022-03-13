@@ -28,11 +28,17 @@ class ProductItem(models.Model):
     # file = todo
 
 @receiver(models.signals.post_save, sender=ProductItem)
-def product_set_to_available(sender, **kwargs):
+def product_set_to_available(sender, instance, created, **kwargs):
     product = sender.product
-    if not product.available:
-        product.available = True
-        product.save(update_fields=["available"])
+    if created:
+        if not product.available:
+            product.available = True
+            product.save(update_fields=["available"])
+    else:
+        if not sender.available:
+            if product.items.filter(available=True).count() == 0:
+                product.available = False
+                product.save(update_fields=["available"])
 
 
 class Deal(models.Model):
