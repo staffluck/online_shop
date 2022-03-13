@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from .models import User
 
-class UserSerializer(serializers.ModelSerializer):
+from djoser.serializers import UserSerializer as djoser_UserSerializer
+
+class UserSerializer(djoser_UserSerializer):
 
     class Meta:
         model = User

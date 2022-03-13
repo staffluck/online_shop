@@ -142,4 +142,11 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+DJOSER = {
+    "SERIALIZERS": {
+        "user": "users.serializers.UserSerializer",
+        "current_user": "users.serializers.UserSerializer"
+    }
+}
+
 EMAIL_AUTHORIZATION_EXPIRE = 30  # Минуты
