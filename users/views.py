@@ -1,3 +1,6 @@
+from smtplib import SMTPException
+
+
 from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.generics import GenericAPIView
@@ -35,8 +38,10 @@ class EmailAuthorizationLetterSendView(GenericAPIView):
 
             subject = "Test"
             message = "{}".format(email_auth_uri)
-            send_mail(subject, message, "from@test.ru", ["to@test.ru", ])
-
+            try:
+                send_mail(subject, message, "maybebaybeboy4ik@mail.ru", [email, ])
+            except SMTPException:
+                return Response("Невозможно отправить письмо", 400)
         return Response(status=200)
 
 

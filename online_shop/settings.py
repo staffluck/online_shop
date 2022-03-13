@@ -124,8 +124,14 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_PORT = 2525
+EMAIL_HOST_USER = "maybebaybeboy4ik@mail.ru"
+EMAIL_HOST_PASSWORD = "3ea4wNDFK3Hk0u2VTFzX"
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

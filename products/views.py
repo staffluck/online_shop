@@ -60,7 +60,7 @@ class ProductBuyView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.data["email"]
-        user_data = User.objects.get_or_create(email=email)  # username = ? TODO
+        user_data = User.objects.get_or_create(email=email, defaults={"username": email, "account_type": 0})  # username = ? TODO
         user = user_data[0]
         user_created = user_data[1]
         if user_created:

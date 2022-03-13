@@ -19,7 +19,8 @@ class User(AbstractUser):
         (BUYER, "Buyer"),
         (SELLER, "Seller"),
     )
-    REQUIRED_FIELDS = AbstractUser.REQUIRED_FIELDS + ["account_type"]
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", ]
 
     account_type = models.IntegerField(default=1, choices=ACCOUNT_TYPES)
     email = models.EmailField("Почтовый адрес", unique=True)

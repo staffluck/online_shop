@@ -29,13 +29,12 @@ class ProductItem(models.Model):
 
 @receiver(models.signals.post_save, sender=ProductItem)
 def product_set_to_available(sender, instance, created, **kwargs):
-    product = sender.product
-    if created:
-        if not product.available:
+    product = instance.product
+    if not product.available:
+        if created:
             product.available = True
             product.save(update_fields=["available"])
-    else:
-        if not sender.available:
+        else:
             if product.items.filter(available=True).count() == 0:
                 product.available = False
                 product.save(update_fields=["available"])
