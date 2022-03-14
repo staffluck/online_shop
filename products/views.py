@@ -3,6 +3,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
 
 from users.models import User
@@ -16,6 +17,7 @@ class ProductListCreateView(ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, ]
     filterset_fields = ['name', ]
+    pagination_class = LimitOffsetPagination
 
     def post(self, request, *args, **kwargs):
         if request.user.account_type == User.BUYER:
@@ -90,6 +92,7 @@ class ProductBuyView(GenericAPIView):
 class DealListView(ListAPIView):
     serializer_class = DealSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
