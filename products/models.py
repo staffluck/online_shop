@@ -16,7 +16,7 @@ class Product(models.Model):
     def get_random_item(self):
         #  TODO проверить другие способы рандома. order_by(?) не вариант
         items = self.items.filter(available=True)
-        if items:
+        if items.exists():
             return choice(items)
         return False
 
