@@ -1,8 +1,9 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
+import json
 
-from .models import Product
+from .models import Product, Deal, ProductItem
 from users.models import User
 
 class ProductTests(APITestCase):
@@ -29,9 +30,15 @@ class ProductTests(APITestCase):
         self.correct_product_item_data = {
             "text": "ProductItemTest"
         }
+        self.update_status_data = {
+            "uuid": "{}",
+            "status": "confirmed"
+        }
 
         self.product_create_url = reverse("product-list")
         self.product_add_item_url = reverse("product-add-item", kwargs={"pk": 1})
+        self.product_buy_url = reverse("product-buy", kwargs={"pk": 1})
+        self.deal_update_status = reverse("deal-update-status")
 
         self.seller = User.objects.create_user(account_type=User.SELLER, **self.correct_seller_data)
         self.wrong_seller = User.objects.create_user(account_type=User.SELLER, email="TestWrongSeller1@email.test", password="qwertyMoreThan8")
@@ -74,3 +81,22 @@ class ProductTests(APITestCase):
 
         self.assertEqual(response_unauthenticated.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response_wrong_seller.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_correct_buy_and_confirm_product(self):
+        self.client.force_authenticate(user=self.buyer)
+        product = Product.objects.create(owner=self.seller, **self.correct_product_data)
+        product_item = ProductItem.objects.create(product=product, text={"TestItem"})
+
+        response = self.client.post(self.product_buy_url)
+        deal_data = json.loads(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(deal_data["product_item"]["id"], "-1")
+
+        confirm_data = self.update_status_data
+        confirm_data["uuid"] = deal_data["uuid"]
+        response_confirm = self.client.post(self.deal_update_status, confirm_data)
+        deal = Deal.objects.get(uuid=deal_data["uuid"])
+
+        self.assertEqual(response_confirm.status_code, status.HTTP_200_OK)
+        self.assertEqual(deal.status, "confirmed")
