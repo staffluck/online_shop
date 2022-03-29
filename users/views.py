@@ -1,6 +1,3 @@
-from smtplib import SMTPException
-
-from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -11,9 +8,9 @@ from djoser.serializers import TokenSerializer
 from drf_spectacular.extensions import OpenApiViewExtension
 from drf_spectacular.utils import extend_schema
 
-
 from .serializers import EmailAuthenticationLetterSendSerializer
 from .models import User, EmailAuthorizationLetter
+from .tasks import send_mail
 
 
 @extend_schema(responses={200: None})
@@ -42,10 +39,7 @@ class EmailAuthorizationLetterSendView(GenericAPIView):
 
             subject = "Test"
             message = "{}".format(email_auth_uri)
-            try:
-                send_mail(subject, message, "maybebaybeboy4ik@mail.ru", [email, ])
-            except SMTPException:
-                return Response("Невозможно отправить письмо", 400)
+            send_mail.delay([email, ], subject, message)
         return Response(status=200)
 
 

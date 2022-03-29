@@ -43,9 +43,10 @@ INSTALLED_APPS = [
     'djoser',
     'django_filters',
     'drf_spectacular',
+    'django_celery_beat',
 
-    "users",
-    "products",
+    'users',
+    'products',
 ]
 
 MIDDLEWARE = [
