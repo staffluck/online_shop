@@ -1,12 +1,13 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 import json
 
 from .models import Product, Deal, ProductItem
 from users.models import User
 
 class ProductTests(APITestCase):
+    # TODO: Faker, Product в SetUpTestData
 
     @classmethod
     def setUpTestData(self):
@@ -36,8 +37,8 @@ class ProductTests(APITestCase):
         }
 
         self.product_create_url = reverse("product-list")
-        self.product_add_item_url = reverse("product-add-item", kwargs={"pk": 1})
-        self.product_buy_url = reverse("product-buy", kwargs={"pk": 1})
+        self.product_add_item_url = reverse_lazy("product-add-item")
+        self.product_buy_url = reverse_lazy("product-buy")
         self.deal_update_status = reverse("deal-update-status")
 
         self.seller = User.objects.create_user(account_type=User.SELLER, **self.correct_seller_data)
@@ -67,6 +68,7 @@ class ProductTests(APITestCase):
     def test_correct_add_item(self):
         self.client.force_authenticate(user=self.seller)
         product = Product.objects.create(owner=self.seller, **self.correct_product_data)
+        self.product_add_item_url._proxy____kw["kwargs"] = {"pk": product.id}
 
         response = self.client.post(self.product_add_item_url, self.correct_product_item_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -74,6 +76,7 @@ class ProductTests(APITestCase):
     def test_unauthorized_and_not_seller_add_item(self):
         self.client.force_authenticate(user=self.wrong_seller)
         product = Product.objects.create(owner=self.seller, **self.correct_product_data)
+        self.product_add_item_url._proxy____kw["kwargs"] = {"pk": product.id}
 
         response_wrong_seller = self.client.post(self.product_add_item_url, self.correct_product_item_data)
         self.client.force_authenticate(user=None)
@@ -86,6 +89,7 @@ class ProductTests(APITestCase):
         self.client.force_authenticate(user=self.buyer)
         product = Product.objects.create(owner=self.seller, **self.correct_product_data)
         product_item = ProductItem.objects.create(product=product, text={"TestItem"})
+        self.product_buy_url._proxy____kw["kwargs"] = {"pk": product.id}
 
         response = self.client.post(self.product_buy_url)
         deal_data = json.loads(response.content)
