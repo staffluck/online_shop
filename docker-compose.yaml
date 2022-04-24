@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  backend:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:5000"
+    volumes:
+      - .:/code
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+  db:
+    image: postgres
+    volumes:
+      - postgres-vol:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=online_shop
+      - POSTGRES_USER=shop_user
+      - POSTGRES_PASSWORD=shop_user_password
+  redis:
+    image: redis
+  celery:
+    restart: always
+    build:
+      context: .
+    command: celery -A online_shop worker -l info
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+      - redis
+      - backend
+volumes:
+  postgres-vol:

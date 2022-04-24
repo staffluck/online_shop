@@ -3,3 +3,4 @@ Pipfile.lock
 .vscode/
 db.sqlite3
 static/
+.env.dev
