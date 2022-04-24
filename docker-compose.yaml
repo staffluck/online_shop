@@ -33,5 +33,14 @@ services:
       - db
       - redis
       - backend
+  celery-beat:
+    restart: always
+    build:
+      context: .
+    command: celery -A online_shop beat -l info
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
 volumes:
   postgres-vol:
