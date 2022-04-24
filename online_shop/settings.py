@@ -134,10 +134,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-EMAIL_HOST = 'smtp.mail.ru'
-EMAIL_PORT = 2525
-EMAIL_HOST_USER = "maybebaybeboy4ik@mail.ru"
-EMAIL_HOST_PASSWORD = "3ea4wNDFK3Hk0u2VTFzX"
+EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_PORT = env("EMAIL_PORT")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
