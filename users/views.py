@@ -1,3 +1,4 @@
+from codecs import lookup
 from django.utils import timezone
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -44,12 +45,11 @@ class EmailAuthorizationLetterSendView(GenericAPIView):
 
 
 class EmailAuthorizationLetterProcessing(GenericAPIView):
+    queryset = EmailAuthorizationLetter.objects.all()
+    lookup_field = "uuid"
 
     def get(self, request, uuid):
-        try:
-            letter = EmailAuthorizationLetter.objects.get(uuid=uuid)
-        except EmailAuthorizationLetter.DoesNotExist:
-            raise NotFound()
+        letter = self.get_object()
 
         if not letter.expire_on < timezone.now():
             user = letter.user

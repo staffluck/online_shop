@@ -27,7 +27,7 @@ class User(AbstractUser):
         (SELLER, "Seller"),
     )
 
-    account_type = models.IntegerField(default=1, choices=ACCOUNT_TYPES)
+    account_type = models.IntegerField(default=SELLER, choices=ACCOUNT_TYPES)
     email = models.EmailField("Почтовый адрес", unique=True)
 
     objects = UserManager()

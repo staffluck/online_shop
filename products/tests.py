@@ -1,7 +1,9 @@
+import json
+
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse, reverse_lazy
-import json
+from django.conf import settings
 
 from .models import Product, Deal, ProductItem
 from users.models import User
@@ -40,6 +42,8 @@ class ProductTests(APITestCase):
         self.product_add_item_url = reverse_lazy("product-add-item")
         self.product_buy_url = reverse_lazy("product-buy")
         self.deal_update_status = reverse("deal-update-status")
+
+        settings.EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
         self.seller = User.objects.create_user(account_type=User.SELLER, **self.correct_seller_data)
         self.wrong_seller = User.objects.create_user(account_type=User.SELLER, email="TestWrongSeller1@email.test", password="qwertyMoreThan8")

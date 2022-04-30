@@ -7,6 +7,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
 
 from users.models import User
+from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
@@ -15,30 +16,24 @@ from .utils import simulate_request_to_kassa
 class ProductListCreateView(ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, ]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsSeller | ReadOnly]
     filterset_fields = ['name', ]
     pagination_class = LimitOffsetPagination
-
-    def post(self, request, *args, **kwargs):
-        if request.user.account_type == User.BUYER:
-            raise PermissionDenied()
-        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
 
 class ProductItemAddToProductView(GenericAPIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticated, IsOwner]
     serializer_class = ProductItemSerializer
 
     def post(self, request, pk):
         try:
             product = Product.objects.select_related("owner").get(id=pk)
+            self.check_object_permissions(request, product)
         except Product.DoesNotExist:
             raise NotFound()
-        if not product.owner == request.user:
-            raise PermissionDenied()
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -49,15 +44,13 @@ class ProductItemAddToProductView(GenericAPIView):
 
 class ProductBuyView(GenericAPIView):
     serializer_class = ProductBuySerializer
+    queryset = Product.objects.filter(available=True)
 
     @extend_schema(
         responses={201: DealSerializer, 404: None}
     )
     def post(self, request, pk):
-        try:
-            product = Product.objects.get(id=pk)
-        except Product.DoesNotExist:
-            raise NotFound()
+        product = self.get_object()
 
         product_item = product.get_random_item()
         if not product_item:
@@ -69,15 +62,13 @@ class ProductBuyView(GenericAPIView):
             email = serializer.data.get("email")
             if not email:
                 raise ValidationError({"email": "Обязательное поле"})
-        else:
-            email = request.user.email
 
-        user_data = User.objects.get_or_create(email=email, defaults={"username": email, "account_type": 0})  # username = ? TODO
-        user = user_data[0]
-        user_created = user_data[1]
-        if user_created:
+            user = User(email=email, account_type=User.BUYER)
             user.set_password(User.objects.make_random_password())
             user.save()
+        else:
+            email = request.user.email
+            user = request.user
 
         confirmation_url = request.build_absolute_uri("/products/deals/")
         kassa_request = simulate_request_to_kassa(confirmation_url, product.price)
@@ -126,6 +117,6 @@ class DealStatusUpdateView(GenericAPIView):
             product_item = deal.product_item
             product_item.available = True
             product_item.save()
-            deal.delete()
+            deal.delete()  # TODO: Архив сделок
 
         return Response(status=200)
