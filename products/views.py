@@ -5,16 +5,19 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 import django_filters
 
 from common.pagination import get_paginated_response
 from users.models import User
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
-    DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer,
+    DealSerializer, DealStatusUpdateSerializer,
+    ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
-    ProductItemInputSerializer, ProductItemOutputSerializer
+    ProductItemInputSerializer, ProductItemOutputSerializer,
+    ProductFilterSerializer
 )
 from .selectors import get_product_by_id, get_products_list
 from .services import product_create, product_item_create
@@ -24,26 +27,32 @@ from .utils import simulate_request_to_kassa
 
 class ProductListCreateView(GenericAPIView):
     serializer_class = ProductOutputSerializer
-    queryset = Product.objects.filter(available=True)
     permission_classes = [IsAuthenticated, IsSeller | ReadOnly]
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
 
+    @extend_schema(
+        request=ProductInputSerializer
+    )
     def post(self, request):
-        serializer_data = request.data
-        serializer_data["owner"] = request.user.id
-        serializer_input = ProductInputSerializer(data=serializer_data)
+        serializer_input = ProductInputSerializer(data=request.data)
         serializer_input.is_valid(raise_exception=True)
 
-        product = product_create(**serializer_input.validated_data)
+        product = product_create(owner=request.user, **serializer_input.validated_data)
 
         output_serializer = ProductOutputSerializer(instance=product)
         return Response(output_serializer.data, status.HTTP_201_CREATED)
 
+    @extend_schema(
+        parameters=[
+            ProductFilterSerializer,
+        ]
+    )
     def get(self, request):
         queryset = get_products_list(
             request=request,
+            queryset=Product.objects.filter(available=True),
             filters=request.query_params
         )
         return get_paginated_response(
@@ -58,6 +67,9 @@ class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
     serializer_class = ProductItemOutputSerializer
 
+    @extend_schema(
+        request=ProductItemInputSerializer
+    )
     def post(self, request, pk):
         is_exists, product = get_product_by_id(id=pk)
         if not is_exists:
@@ -76,8 +88,7 @@ class ProductItemAddToProductView(GenericAPIView):
 
 
 class ProductBuyView(GenericAPIView):
-    serializer_class = ProductBuySerializer
-    queryset = Product.objects.filter(available=True)
+    serializer_class = DealSerializer
 
     @extend_schema(
         responses={201: DealSerializer, 404: None}

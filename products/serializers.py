@@ -5,12 +5,19 @@ from .models import Product, ProductItem, Deal
 from users.models import User
 from users.serializers import UserSerializer
 
+class ProductFilterSerializer(serializers.Serializer):
+    limit = serializers.IntegerField(required=False)
+    offset = serializers.IntegerField(required=False)
+    name = serializers.CharField(required=False)
+    mine = serializers.BooleanField(required=False)
+
+
 class ProductInputSerializer(serializers.ModelSerializer):
-    owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(account_type=User.SELLER))
 
     class Meta:
         model = Product
-        exclude = ["available", "purchased_count"]
+        exclude = ["available", "purchased_count", "owner"]
+
 
 class ProductOutputSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -21,13 +28,16 @@ class ProductOutputSerializer(serializers.Serializer):
     available = serializers.BooleanField(read_only=True)
     owner = UserSerializer(read_only=True)
 
-class ProductItemOutputSerializer(serializers.Serializer):
-    product = ProductOutputSerializer(read_only=True)
-    text = serializers.CharField(read_only=True)
-    available = serializers.BooleanField(read_only=True)
 
 class ProductItemInputSerializer(serializers.Serializer):
     text = serializers.CharField()
+
+
+class ProductItemOutputSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    text = serializers.CharField(read_only=True)
+    available = serializers.BooleanField(read_only=True)
+
 
 class DealSerializer(serializers.ModelSerializer):
     product_item = serializers.SerializerMethodField()
@@ -50,7 +60,8 @@ class DealSerializer(serializers.ModelSerializer):
         }
         return hidden_data
 
-class ProductBuySerializer(serializers.Serializer):
+
+class ProductBuyInputSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
 
 
