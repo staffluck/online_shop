@@ -19,8 +19,10 @@ class ProductFilter(django_filters.FilterSet):
         else:
             return queryset.exclude(owner=self.request.user)
 
-def get_products_list(*, queryset: QuerySet, request: Request, filters: dict = None):
+def get_products_list(*, request: Request, queryset: QuerySet, filters: dict = None):
     if not filters:
         filters = {}
+    if not queryset:
+        queryset = Product.objects.all()
 
     return ProductFilter(filters, queryset, request=request).qs

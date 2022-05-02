@@ -16,6 +16,7 @@ from .serializers import (
     ProductInputSerializer, ProductOutputSerializer
 )
 from .selectors import get_products_list
+from .services import product_create
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
@@ -34,17 +35,15 @@ class ProductListCreateView(GenericAPIView):
         product_serializer = ProductInputSerializer(data=serializer_data)
         product_serializer.is_valid(raise_exception=True)
 
-        product = Product(**product_serializer.validated_data)
-        product.full_clean()
-        product.save()
+        product = product_create(**product_serializer.validated_data)
 
-        output_serializer = ProductOutputSerializer(instance=product)
+        output_serializer = ProductOutputSerializer(product)
         return Response(output_serializer.data, status.HTTP_201_CREATED)
 
     def get(self, request):
         queryset = get_products_list(
-            queryset=self.get_queryset(),
             request=request,
+            queryset=self.get_queryset(),
             filters=request.query_params
         )
         return get_paginated_response(
