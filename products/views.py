@@ -12,11 +12,12 @@ from common.pagination import get_paginated_response
 from users.models import User
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
-    DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer,
-    ProductInputSerializer, ProductOutputSerializer
+    DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer,
+    ProductInputSerializer, ProductOutputSerializer,
+    ProductItemInputSerializer, ProductItemOutputSerializer
 )
-from .selectors import get_products_list
-from .services import product_create
+from .selectors import get_product_by_id, get_products_list
+from .services import product_create, product_item_create
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
@@ -32,18 +33,17 @@ class ProductListCreateView(GenericAPIView):
     def post(self, request):
         serializer_data = request.data
         serializer_data["owner"] = request.user.id
-        product_serializer = ProductInputSerializer(data=serializer_data)
-        product_serializer.is_valid(raise_exception=True)
+        serializer_input = ProductInputSerializer(data=serializer_data)
+        serializer_input.is_valid(raise_exception=True)
 
-        product = product_create(**product_serializer.validated_data)
+        product = product_create(**serializer_input.validated_data)
 
-        output_serializer = ProductOutputSerializer(product)
+        output_serializer = ProductOutputSerializer(instance=product)
         return Response(output_serializer.data, status.HTTP_201_CREATED)
 
     def get(self, request):
         queryset = get_products_list(
             request=request,
-            queryset=self.get_queryset(),
             filters=request.query_params
         )
         return get_paginated_response(
@@ -56,20 +56,23 @@ class ProductListCreateView(GenericAPIView):
 
 class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
-    serializer_class = ProductItemSerializer
+    serializer_class = ProductItemOutputSerializer
 
     def post(self, request, pk):
-        try:
-            product = Product.objects.select_related("owner").get(id=pk)
-            self.check_object_permissions(request, product)
-        except Product.DoesNotExist:
+        is_exists, product = get_product_by_id(id=pk)
+        if not is_exists:
             raise NotFound()
+        self.check_object_permissions(request, product)
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(product=product)
+        serializer_input = ProductItemInputSerializer(data=request.data)
+        serializer_input.is_valid(raise_exception=True)
+        product_item = product_item_create(
+            product=product,
+            **serializer_input.data
+        )
 
-        return Response(serializer.data, 201)
+        serializer_output = ProductItemOutputSerializer(instance=product_item)
+        return Response(serializer_output.data, status.HTTP_201_CREATED)
 
 
 class ProductBuyView(GenericAPIView):

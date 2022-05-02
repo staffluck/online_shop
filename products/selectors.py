@@ -1,3 +1,4 @@
+from typing import List, Tuple, Union
 import django_filters
 from rest_framework.request import Request
 from django.db.models import QuerySet
@@ -19,10 +20,19 @@ class ProductFilter(django_filters.FilterSet):
         else:
             return queryset.exclude(owner=self.request.user)
 
-def get_products_list(*, request: Request, queryset: QuerySet, filters: dict = None):
+def get_products_list(*, request: Request, queryset: QuerySet = None, filters: dict = None) -> QuerySet[Product]:
     if not filters:
         filters = {}
-    if not queryset:
+    if queryset is None:
         queryset = Product.objects.all()
 
     return ProductFilter(filters, queryset, request=request).qs
+
+def get_product_by_id(*, id: int, queryset: QuerySet = None) -> Union[Tuple[bool, List], Tuple[bool, QuerySet[Product]]]:
+    if queryset is None:
+        queryset = Product.objects.all()
+
+    queryset = queryset.filter(id=id)
+    if queryset.exists():
+        return True, queryset.first()
+    return False, []

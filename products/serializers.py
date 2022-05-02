@@ -21,13 +21,13 @@ class ProductOutputSerializer(serializers.Serializer):
     available = serializers.BooleanField(read_only=True)
     owner = UserSerializer(read_only=True)
 
-class ProductItemSerializer(serializers.ModelSerializer):
+class ProductItemOutputSerializer(serializers.Serializer):
     product = ProductOutputSerializer(read_only=True)
+    text = serializers.CharField(read_only=True)
+    available = serializers.BooleanField(read_only=True)
 
-    class Meta:
-        model = ProductItem
-        exclude = ("available", )
-
+class ProductItemInputSerializer(serializers.Serializer):
+    text = serializers.CharField()
 
 class DealSerializer(serializers.ModelSerializer):
     product_item = serializers.SerializerMethodField()
@@ -37,10 +37,10 @@ class DealSerializer(serializers.ModelSerializer):
         model = Deal
         fields = "__all__"  # exclude = ("uuid", ) в реальном проекте
 
-    @extend_schema_field(ProductItemSerializer)
+    @extend_schema_field(ProductOutputSerializer)
     def get_product_item(self, obj):
         if obj.status == "confirmed":
-            return ProductItemSerializer(obj.product_item).data
+            return ProductOutputSerializer(obj.product_item).data
 
         serializer = ProductOutputSerializer(obj.product_item.product)
         hidden_data = {
