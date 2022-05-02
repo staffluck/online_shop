@@ -28,6 +28,7 @@ class ProductListCreateView(GenericAPIView):
         default_limit = 10
 
     class ProductFilter(django_filters.FilterSet):
+        name = django_filters.CharFilter(lookup_expr="icontains")
         mine = django_filters.BooleanFilter(method="get_mine_filter")
 
         class Meta:
@@ -35,8 +36,10 @@ class ProductListCreateView(GenericAPIView):
             fields = ["name", "mine"]
 
         def get_mine_filter(self, queryset, mine, value):
-            print(mine, value)
-            return queryset
+            if value:
+                return queryset.filter(owner=self.request.user)
+            else:
+                return queryset.exclude(owner=self.request.user)
 
     def post(self, request):
         serializer_data = request.data
@@ -52,7 +55,7 @@ class ProductListCreateView(GenericAPIView):
         return Response(output_serializer.data, status.HTTP_201_CREATED)
 
     def get(self, request):
-        queryset = self.ProductFilter(request.query_params, self.get_queryset()).qs
+        queryset = self.ProductFilter(request.query_params, self.get_queryset(), request=request).qs
         paginator = self.Pagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         if page:
