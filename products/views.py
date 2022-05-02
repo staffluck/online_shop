@@ -1,28 +1,66 @@
-from rest_framework.generics import ListCreateAPIView, ListAPIView, GenericAPIView
+from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework import status, serializers
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
+import django_filters
 
 from users.models import User
 from users.permissions import IsOwner, IsSeller, ReadOnly
-from .serializers import DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer, ProductSerializer
+from users.serializers import UserSerializer
+from .serializers import (
+    DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer,
+    ProductInputSerializer, ProductOutputSerializer
+)
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
 
-class ProductListCreateView(ListCreateAPIView):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsSeller | ReadOnly]
-    filterset_fields = ['name', ]
-    pagination_class = LimitOffsetPagination
+class ProductListCreateView(GenericAPIView):
+    serializer_class = ProductOutputSerializer
+    queryset = Product.objects.filter(available=True)
+    permission_classes = [IsAuthenticated, IsSeller | ReadOnly]
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    class Pagination(LimitOffsetPagination):
+        default_limit = 10
 
+    class ProductFilter(django_filters.FilterSet):
+        mine = django_filters.BooleanFilter(method="get_mine_filter")
+
+        class Meta:
+            model = Product
+            fields = ["name", "mine"]
+
+        def get_mine_filter(self, queryset, mine, value):
+            print(mine, value)
+            return queryset
+
+    def post(self, request):
+        serializer_data = request.data
+        serializer_data["owner"] = request.user.id
+        product_serializer = ProductInputSerializer(data=serializer_data)
+        product_serializer.is_valid(raise_exception=True)
+
+        product = Product(**product_serializer.validated_data)
+        product.full_clean()
+        product.save()
+
+        output_serializer = ProductOutputSerializer(instance=product)
+        return Response(output_serializer.data, status.HTTP_201_CREATED)
+
+    def get(self, request):
+        queryset = self.ProductFilter(request.query_params, self.get_queryset()).qs
+        paginator = self.Pagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        if page:
+            serializer = ProductOutputSerializer(page, many=True)
+        else:
+            serializer = ProductOutputSerializer(queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
 class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
@@ -50,12 +88,6 @@ class ProductBuyView(GenericAPIView):
         responses={201: DealSerializer, 404: None}
     )
     def post(self, request, pk):
-        product = self.get_object()
-
-        product_item = product.get_random_item()
-        if not product_item:
-            raise NotFound("Нет доступных товаров")
-
         if not request.user.is_authenticated:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid()
@@ -69,6 +101,11 @@ class ProductBuyView(GenericAPIView):
         else:
             email = request.user.email
             user = request.user
+
+        product = self.get_object()
+        product_item = product.get_random_item()
+        if not product_item:
+            raise NotFound("Нет доступных товаров")
 
         confirmation_url = request.build_absolute_uri("/products/deals/")
         kassa_request = simulate_request_to_kassa(confirmation_url, product.price)

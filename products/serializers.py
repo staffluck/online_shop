@@ -2,20 +2,27 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from .models import Product, ProductItem, Deal
+from users.models import User
 from users.serializers import UserSerializer
 
-
-class ProductSerializer(serializers.ModelSerializer):
-    owner = UserSerializer(read_only=True)
+class ProductInputSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(account_type=User.SELLER))
 
     class Meta:
         model = Product
-        fields = "__all__"
-        read_only_fields = ['purchased_count', 'available']
+        exclude = ["available", "purchased_count"]
 
+class ProductOutputSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    price = serializers.IntegerField(read_only=True)
+    description = serializers.CharField(read_only=True)
+    purchased_count = serializers.IntegerField(read_only=True)
+    available = serializers.BooleanField(read_only=True)
+    owner = UserSerializer(read_only=True)
 
 class ProductItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
+    product = ProductOutputSerializer(read_only=True)
 
     class Meta:
         model = ProductItem
@@ -35,7 +42,7 @@ class DealSerializer(serializers.ModelSerializer):
         if obj.status == "confirmed":
             return ProductItemSerializer(obj.product_item).data
 
-        serializer = ProductSerializer(obj.product_item.product)
+        serializer = ProductOutputSerializer(obj.product_item.product)
         hidden_data = {
             "id": "-1",
             "product": serializer.data,
