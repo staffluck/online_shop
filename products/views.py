@@ -5,11 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.types import OpenApiTypes
 import django_filters
 
-from common.pagination import get_paginated_response
+from common.pagination import get_paginated_response, get_paginated_response_schema
 from users.models import User
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
@@ -17,7 +17,6 @@ from .serializers import (
     ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
-    ProductFilterSerializer
 )
 from .selectors import get_product_by_id, get_products_list
 from .services import product_create, product_item_create
@@ -31,6 +30,12 @@ class ProductListCreateView(GenericAPIView):
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
+
+    class ProductFilterSerializer(serializers.Serializer):
+        limit = serializers.IntegerField(required=False)
+        offset = serializers.IntegerField(required=False)
+        name = serializers.CharField(required=False)
+        mine = serializers.BooleanField(required=False)
 
     @extend_schema(
         request=ProductInputSerializer
@@ -47,7 +52,8 @@ class ProductListCreateView(GenericAPIView):
     @extend_schema(
         parameters=[
             ProductFilterSerializer,
-        ]
+        ],
+        responses=get_paginated_response_schema(ProductOutputSerializer)
     )
     def get(self, request):
         queryset = get_products_list(
@@ -91,7 +97,7 @@ class ProductBuyView(GenericAPIView):
     serializer_class = DealSerializer
 
     @extend_schema(
-        responses={201: DealSerializer, 404: None}
+        responses={201: DealSerializer}
     )
     def post(self, request, pk):
         if not request.user.is_authenticated:

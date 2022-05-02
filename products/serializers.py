@@ -5,12 +5,6 @@ from .models import Product, ProductItem, Deal
 from users.models import User
 from users.serializers import UserSerializer
 
-class ProductFilterSerializer(serializers.Serializer):
-    limit = serializers.IntegerField(required=False)
-    offset = serializers.IntegerField(required=False)
-    name = serializers.CharField(required=False)
-    mine = serializers.BooleanField(required=False)
-
 
 class ProductInputSerializer(serializers.ModelSerializer):
 
