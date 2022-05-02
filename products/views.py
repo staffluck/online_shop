@@ -8,13 +8,14 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
 import django_filters
 
+from common.pagination import get_paginated_response
 from users.models import User
 from users.permissions import IsOwner, IsSeller, ReadOnly
-from users.serializers import UserSerializer
 from .serializers import (
     DealSerializer, DealStatusUpdateSerializer, ProductBuySerializer, ProductItemSerializer,
     ProductInputSerializer, ProductOutputSerializer
 )
+from .selectors import get_products_list
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
@@ -26,20 +27,6 @@ class ProductListCreateView(GenericAPIView):
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
-
-    class ProductFilter(django_filters.FilterSet):
-        name = django_filters.CharFilter(lookup_expr="icontains")
-        mine = django_filters.BooleanFilter(method="get_mine_filter")
-
-        class Meta:
-            model = Product
-            fields = ["name", "mine"]
-
-        def get_mine_filter(self, queryset, mine, value):
-            if value:
-                return queryset.filter(owner=self.request.user)
-            else:
-                return queryset.exclude(owner=self.request.user)
 
     def post(self, request):
         serializer_data = request.data
@@ -55,15 +42,18 @@ class ProductListCreateView(GenericAPIView):
         return Response(output_serializer.data, status.HTTP_201_CREATED)
 
     def get(self, request):
-        queryset = self.ProductFilter(request.query_params, self.get_queryset(), request=request).qs
-        paginator = self.Pagination()
-        page = paginator.paginate_queryset(queryset, request, view=self)
-        if page:
-            serializer = ProductOutputSerializer(page, many=True)
-        else:
-            serializer = ProductOutputSerializer(queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
+        queryset = get_products_list(
+            queryset=self.get_queryset(),
+            request=request,
+            filters=request.query_params
+        )
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=ProductOutputSerializer,
+            queryset=queryset,
+            request=request,
+            view=self
+        )
 
 class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
