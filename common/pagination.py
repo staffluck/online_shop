@@ -16,7 +16,7 @@ def get_paginated_response(*, pagination_class: BasePagination, serializer_class
 
 def get_paginated_response_schema(nested_serializer: serializers.BaseSerializer):
     response_schema = inline_serializer(
-        name="ProductPaginatedSerializer",
+        name="PaginatedSchema",
         fields={
             "count": serializers.IntegerField(),
             "next": serializers.URLField(),

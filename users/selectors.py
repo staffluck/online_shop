@@ -7,6 +7,6 @@ def get_or_create_buyer_user(*, email: str) -> User:
     if not user.exists():
         user = create_buyer_user(email=email)
     else:
-        user.first()
+        user = user.first()
 
     return user
