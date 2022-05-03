@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from users.models import User
 
+
 class Product(models.Model):
     owner = models.ForeignKey(User, models.SET_NULL, related_name="owned_products", verbose_name="Владелец", null=True)
     name = models.CharField("Название", max_length=75, db_index=True)
@@ -13,12 +14,6 @@ class Product(models.Model):
     purchased_count = models.IntegerField("Количество купленных копий", default=0)
     available = models.BooleanField(default=False)
 
-    def get_random_item(self):
-        #  TODO проверить другие способы рандома. order_by(?) не вариант
-        items = self.items.filter(available=True)
-        if items.exists():
-            return choice(items)
-        return False
 
 class ProductItem(models.Model):
     product = models.ForeignKey(Product, models.SET_NULL, related_name="items", verbose_name="Продукт", null=True)
@@ -26,6 +21,7 @@ class ProductItem(models.Model):
     available = models.BooleanField(default=True)
 
     # file = todo
+
 
 @receiver(models.signals.post_save, sender=ProductItem)
 def product_set_to_available(sender, instance, created, **kwargs):

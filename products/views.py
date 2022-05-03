@@ -1,37 +1,37 @@
 from rest_framework.generics import ListAPIView, GenericAPIView
-from rest_framework.exceptions import NotFound, PermissionDenied
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
-from drf_spectacular.utils import extend_schema, inline_serializer
-from drf_spectacular.types import OpenApiTypes
-import django_filters
+from drf_spectacular.utils import extend_schema
 
 from common.pagination import get_paginated_response, get_paginated_response_schema
 from users.models import User
+from users.services import create_buyer_user
+from users.selectors import get_or_create_buyer_user
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
-    DealSerializer, DealStatusUpdateSerializer,
+    DealOutputSerializer, DealStatusUpdateSerializer,
     ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
 )
-from .selectors import get_product_by_id, get_products_list
-from .services import product_create, product_item_create
+from .selectors import get_product_by_id, get_products_list, get_random_product_item
+from .services import deal_create, product_create, product_item_create
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
 
 class ProductListCreateView(GenericAPIView):
     serializer_class = ProductOutputSerializer
-    permission_classes = [IsAuthenticated, IsSeller | ReadOnly]
+    permission_classes = [(IsAuthenticated & IsSeller) | ReadOnly]
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
 
-    class ProductFilterSerializer(serializers.Serializer):
+    class FilterSerializer(serializers.Serializer):
         limit = serializers.IntegerField(required=False)
         offset = serializers.IntegerField(required=False)
         name = serializers.CharField(required=False)
@@ -51,14 +51,14 @@ class ProductListCreateView(GenericAPIView):
 
     @extend_schema(
         parameters=[
-            ProductFilterSerializer,
+            FilterSerializer,
         ],
         responses=get_paginated_response_schema(ProductOutputSerializer)
     )
     def get(self, request):
         queryset = get_products_list(
             request=request,
-            queryset=Product.objects.filter(available=True),
+            queryset=Product.objects.select_related("owner").filter(available=True),
             filters=request.query_params
         )
         return get_paginated_response(
@@ -84,53 +84,51 @@ class ProductItemAddToProductView(GenericAPIView):
 
         serializer_input = ProductItemInputSerializer(data=request.data)
         serializer_input.is_valid(raise_exception=True)
-        product_item = product_item_create(
-            product=product,
-            **serializer_input.data
-        )
+        product_item = product_item_create(product=product, **serializer_input.data)
 
         serializer_output = ProductItemOutputSerializer(instance=product_item)
         return Response(serializer_output.data, status.HTTP_201_CREATED)
 
 
 class ProductBuyView(GenericAPIView):
-    serializer_class = DealSerializer
+    serializer_class = DealOutputSerializer
 
     @extend_schema(
-        responses={201: DealSerializer}
+        request=ProductBuyInputSerializer
     )
     def post(self, request, pk):
         if not request.user.is_authenticated:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid()
+            serializer = ProductBuyInputSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             email = serializer.data.get("email")
             if not email:
-                raise ValidationError({"email": "Обязательное поле"})
+                raise ValidationError({"email": ["This field is required."]})
 
-            user = User(email=email, account_type=User.BUYER)
-            user.set_password(User.objects.make_random_password())
-            user.save()
+            user = get_or_create_buyer_user(email=email)
         else:
-            email = request.user.email
             user = request.user
 
-        product = self.get_object()
-        product_item = product.get_random_item()
+        is_exist, product = get_product_by_id(id=pk)
+        if not is_exist:
+            raise NotFound()
+        is_exist, product_item = get_random_product_item(product=product)
         if not product_item:
             raise NotFound("Нет доступных товаров")
 
         confirmation_url = request.build_absolute_uri("/products/deals/")
-        kassa_request = simulate_request_to_kassa(confirmation_url, product.price)
+        deal = deal_create(
+            confirmation_url=confirmation_url,
+            product=product,
+            product_item=product_item,
+            buyer=user
+        )
 
-        product_item.available = False
-        product_item.save()
-        deal = Deal.objects.create(uuid=kassa_request["id"], buyer=user, product_item=product_item, cost=kassa_request["amount"]["value"])
-
-        return Response(DealSerializer(instance=deal).data, status=200)
+        serializer_output = DealOutputSerializer(instance=deal)
+        return Response(serializer_output.data, status=status.HTTP_201_CREATED)
 
 
 class DealListView(ListAPIView):
-    serializer_class = DealSerializer
+    serializer_class = DealOutputSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = LimitOffsetPagination
 

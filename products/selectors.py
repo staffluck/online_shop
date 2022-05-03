@@ -1,9 +1,14 @@
 from typing import List, Tuple, Union
+from random import choice
+
 import django_filters
 from rest_framework.request import Request
+from rest_framework.serializers import BaseSerializer
 from django.db.models import QuerySet
 
-from .models import Product
+from products.serializers import ProductOutputSerializer
+
+from .models import Deal, Product, ProductItem
 
 
 class ProductFilter(django_filters.FilterSet):
@@ -28,11 +33,18 @@ def get_products_list(*, request: Request, queryset: QuerySet = None, filters: d
 
     return ProductFilter(filters, queryset, request=request).qs
 
-def get_product_by_id(*, id: int, queryset: QuerySet = None) -> Union[Tuple[bool, List], Tuple[bool, QuerySet[Product]]]:
+def get_product_by_id(*, id: int, queryset: QuerySet = None) -> Union[Tuple[bool, List], Tuple[bool, Product]]:
     if queryset is None:
         queryset = Product.objects.all()
 
     queryset = queryset.filter(id=id)
     if queryset.exists():
         return True, queryset.first()
+    return False, []
+
+
+def get_random_product_item(*, product: Product) -> Union[Tuple[bool, List], Tuple[bool, ProductItem]]:
+    items = product.items.filter(available=True)
+    if items.exists():
+        return True, choice(items)
     return False, []

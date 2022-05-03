@@ -33,7 +33,7 @@ class ProductItemOutputSerializer(serializers.Serializer):
     available = serializers.BooleanField(read_only=True)
 
 
-class DealSerializer(serializers.ModelSerializer):
+class DealOutputSerializer(serializers.ModelSerializer):
     product_item = serializers.SerializerMethodField()
     buyer = UserSerializer(read_only=True)
 
