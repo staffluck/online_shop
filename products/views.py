@@ -18,7 +18,7 @@ from .serializers import (
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
 )
-from .selectors import get_product_by_id, get_products_list, get_random_product_item
+from .selectors import get_deals_list, get_product_by_id, get_products_list, get_random_product_item
 from .services import deal_create, product_create, product_item_create
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
@@ -127,19 +127,36 @@ class ProductBuyView(GenericAPIView):
         return Response(serializer_output.data, status=status.HTTP_201_CREATED)
 
 
-class DealListView(ListAPIView):
-    serializer_class = DealOutputSerializer
+class DealListView(GenericAPIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = LimitOffsetPagination
 
-    def get_queryset(self):
-        if getattr(self, "swagger_fake_view", False):
-            return Deal.objects.none()
-        user = self.request.user
-        if user.account_type == User.SELLER:
-            return Deal.objects.filter(product_item__product__owner=user)
-        return Deal.objects.filter(buyer=user)
+    class Pagination(LimitOffsetPagination):
+        default_limit = 10
 
+    class FilterSerializer(serializers.Serializer):
+        limit = serializers.IntegerField(required=False)
+        offset = serializers.IntegerField(required=False)
+        status = serializers.CharField(required=False)
+
+    @extend_schema(
+        parameters=[
+            FilterSerializer
+        ],
+        responses=get_paginated_response_schema(DealOutputSerializer)
+    )
+    def get(self, request):
+        user = request.user
+        deals = get_deals_list(
+            user=user,
+            filters=request.query_params
+        )
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=DealOutputSerializer,
+            queryset=deals,
+            request=request,
+            view=self
+        )
 
 class DealStatusUpdateView(GenericAPIView):
     serializer_class = DealStatusUpdateSerializer

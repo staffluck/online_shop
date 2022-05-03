@@ -34,9 +34,12 @@ def product_set_to_available(sender, instance, created, **kwargs):
 
 
 class Deal(models.Model):
+    CONFIRMED = "confirmed"
+    PENDING = "pending"
+
     STATUSES = (
-        ("confirmed", "confirmed"),
-        ("pending", "pending")
+        ("confirmed", CONFIRMED),
+        ("pending", PENDING)
     )
 
     uuid = models.UUIDField()
