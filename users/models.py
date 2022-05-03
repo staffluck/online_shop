@@ -14,9 +14,7 @@ def get_expire_time():
 class UserManager(django_UserManager):
 
     def create_user(self, email, **kwargs):
-        if not kwargs.get("username"):
-            kwargs["username"] = email
-        return super().create_user(email=email, **kwargs)
+        return super().create_user(email=email, username=email, **kwargs)
 
 
 class User(AbstractUser):
