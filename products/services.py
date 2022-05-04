@@ -5,6 +5,7 @@ from users.models import User
 from .models import Product, ProductItem, Deal
 from .utils import simulate_request_to_kassa
 
+
 def product_create(*, name: str, price: int, description: str, owner: AbstractBaseUser) -> Product:
     product = Product(
         name=name,
@@ -38,3 +39,19 @@ def deal_create(*, confirmation_url: str, product: Product, product_item: Produc
     deal = Deal.objects.create(uuid=kassa_request["id"], buyer=buyer, product_item=product_item, cost=kassa_request["amount"]["value"])
 
     return deal
+
+def deal_update_status(*, deal: Deal, uuid: str, status: str) -> None:
+    product_item = deal.product_item
+    product = product_item.product
+
+    if status == "confirmed":
+        deal.status = Deal.CONFIRMED
+        product.purchased_count += 1
+        product.save()
+        deal.save()
+    elif status == "canceled":
+        product_item.available = True
+        product_item.save()
+        deal.delete()
+
+    return None
