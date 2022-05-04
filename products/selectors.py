@@ -36,18 +36,20 @@ def get_products_list(*, request: Request, queryset: Optional[QuerySet] = None, 
     if not filters:
         filters = {}
     if queryset is None:
-        queryset = Product.objects.all()
+        queryset = Product.objects.select_related("owner").all()
 
     return ProductFilter(filters, queryset, request=request).qs
 
 def get_product_by_id(*, id: int, queryset: Optional[QuerySet] = None) -> Union[Tuple[bool, List], Tuple[bool, Product]]:
     if queryset is None:
-        queryset = Product.objects.all()
+        queryset = Product.objects.select_related("owner").all()
 
     queryset = queryset.filter(id=id)
     if queryset.exists():
-        return True, queryset.first()
-    return False, []
+        response = (True, queryset.first())
+    else:
+        response = (False, [])
+    return response
 
 
 def get_random_product_item(*, product: Product) -> Union[Tuple[bool, List], Tuple[bool, ProductItem]]:
@@ -61,7 +63,7 @@ def get_deals_list(*, user: User, queryset: Optional[QuerySet] = None, filters: 
     if not filters:
         filters = {}
     if queryset is None:
-        queryset = Deal.objects.select_related("product_item", "product_item__product__owner").all()
+        queryset = Deal.objects.select_related("product_item", "product_item__product", "product_item__product__owner").all()
 
     if user.account_type == User.SELLER:
         queryset = queryset.filter(product_item__product__owner=user)
@@ -69,3 +71,14 @@ def get_deals_list(*, user: User, queryset: Optional[QuerySet] = None, filters: 
         queryset = queryset.filter(buyer=user)
 
     return DealFilter(filters, queryset).qs
+
+def get_deal_by_uuid(*, uuid: int, queryset: Optional[QuerySet] = None) -> Union[Tuple[bool, List], Tuple[bool, Deal]]:
+    if queryset is None:
+        queryset = Deal.objects.select_related("product_item", "product_item__product", "product_item__product__owner").all()
+
+    queryset = queryset.filter(uuid=uuid)
+    if queryset.exists():
+        response = (True, queryset.first())
+    else:
+        response = (False, [])
+    return response
