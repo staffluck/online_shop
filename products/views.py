@@ -1,4 +1,4 @@
-from rest_framework.generics import ListAPIView, GenericAPIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,20 +8,18 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
 
 from common.pagination import get_paginated_response, get_paginated_response_schema
-from users.models import User
-from users.services import create_buyer_user
 from users.selectors import get_or_create_buyer_user
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
-    DealOutputSerializer, DealStatusUpdateSerializer,
+    DealOutputSerializer,
+    DealStatusUpdateInputSerializer,
     ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
 )
-from .selectors import get_deals_list, get_product_by_id, get_products_list, get_random_product_item
-from .services import deal_create, product_create, product_item_create
-from .models import Product, ProductItem, Deal
-from .utils import simulate_request_to_kassa
+from .selectors import get_deal_by_uuid, get_deals_list, get_product_by_id, get_products_list, get_random_product_item
+from .services import deal_create, deal_update_status, product_create, product_item_create
+from .models import Product, Deal
 
 
 class ProductListCreateView(GenericAPIView):
@@ -145,9 +143,8 @@ class DealListView(GenericAPIView):
         responses=get_paginated_response_schema(DealOutputSerializer)
     )
     def get(self, request):
-        user = request.user
         deals = get_deals_list(
-            user=user,
+            user=request.user,
             filters=request.query_params
         )
         return get_paginated_response(
@@ -159,28 +156,24 @@ class DealListView(GenericAPIView):
         )
 
 class DealStatusUpdateView(GenericAPIView):
-    serializer_class = DealStatusUpdateSerializer
+    serializer_class = DealStatusUpdateInputSerializer
 
     @extend_schema(responses={200: None})
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.data
-        try:
-            deal = Deal.objects.get(uuid=data["uuid"])
-        except Deal.DoesNotExist:
-            raise NotFound()
+        serializer_input = DealStatusUpdateInputSerializer(data=request.data)
+        serializer_input.is_valid(raise_exception=True)
 
-        product = deal.product_item.product
-        if data["status"] == "confirmed":
-            deal.status = "confirmed"
-            product.purchased_count += 1
-            product.save()
-            deal.save()
-        elif data["status"] == "canceled":
-            product_item = deal.product_item
-            product_item.available = True
-            product_item.save()
-            deal.delete()  # TODO: Архив сделок
+        validated_data = serializer_input.validated_data
+        is_exist, deal = get_deal_by_uuid(
+            uuid=validated_data["uuid"],
+            queryset=Deal.objects.select_related("product_item", "product_item__product")
+        )
+        if not is_exist:
+            return Response(status=400)
+        deal_update_status(
+            deal=deal,
+            uuid=validated_data["uuid"],
+            status=validated_data["status"]
+        )
 
         return Response(status=200)

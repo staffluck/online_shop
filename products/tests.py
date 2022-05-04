@@ -98,7 +98,7 @@ class ProductTests(APITestCase):
         response = self.client.post(self.product_buy_url)
         deal_data = json.loads(response.content)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(deal_data["product_item"]["id"], "-1")
 
         confirm_data = self.update_status_data
