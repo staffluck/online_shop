@@ -14,13 +14,13 @@ class ProductInputSerializer(serializers.ModelSerializer):
 
 
 class ProductOutputSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(read_only=True)
-    price = serializers.IntegerField(read_only=True)
-    description = serializers.CharField(read_only=True)
-    purchased_count = serializers.IntegerField(read_only=True)
-    available = serializers.BooleanField(read_only=True)
-    owner = UserSerializer(read_only=True)
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    price = serializers.IntegerField()
+    description = serializers.CharField()
+    purchased_count = serializers.IntegerField()
+    available = serializers.BooleanField()
+    owner = UserSerializer()
 
 
 class ProductItemInputSerializer(serializers.Serializer):
@@ -28,14 +28,14 @@ class ProductItemInputSerializer(serializers.Serializer):
 
 
 class ProductItemOutputSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    text = serializers.CharField(read_only=True)
-    available = serializers.BooleanField(read_only=True)
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    available = serializers.BooleanField()
 
 
 class DealOutputSerializer(serializers.ModelSerializer):
     product_item = serializers.SerializerMethodField()
-    buyer = UserSerializer(read_only=True)
+    buyer = UserSerializer()
 
     class Meta:
         model = Deal
@@ -59,6 +59,6 @@ class ProductBuyInputSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
 
 
-class DealStatusUpdateSerializer(serializers.Serializer):
+class DealStatusUpdateInputSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     status = serializers.CharField()
