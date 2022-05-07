@@ -1,10 +1,8 @@
 from typing import List, Optional, Tuple, Union
 from random import choice
-import django
 
 import django_filters
 from rest_framework.request import Request
-from rest_framework.serializers import BaseSerializer
 from django.db.models import QuerySet
 
 from users.models import User
@@ -25,6 +23,7 @@ class ProductFilter(django_filters.FilterSet):
         else:
             return queryset.exclude(owner=self.request.user)
 
+
 class DealFilter(django_filters.FilterSet):
 
     class Meta:
@@ -39,6 +38,7 @@ def get_products_list(*, request: Request, queryset: Optional[QuerySet] = None, 
         queryset = Product.objects.select_related("owner").all()
 
     return ProductFilter(filters, queryset, request=request).qs
+
 
 def get_product_by_id(*, id: int, queryset: Optional[QuerySet] = None) -> Union[Tuple[bool, List], Tuple[bool, Product]]:
     if queryset is None:
@@ -71,6 +71,7 @@ def get_deals_list(*, user: User, queryset: Optional[QuerySet] = None, filters: 
         queryset = queryset.filter(buyer=user)
 
     return DealFilter(filters, queryset).qs
+
 
 def get_deal_by_uuid(*, uuid: int, queryset: Optional[QuerySet] = None) -> Union[Tuple[bool, List], Tuple[bool, Deal]]:
     if queryset is None:
