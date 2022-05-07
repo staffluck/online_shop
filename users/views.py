@@ -8,38 +8,29 @@ from djoser.serializers import TokenSerializer
 from drf_spectacular.extensions import OpenApiViewExtension
 from drf_spectacular.utils import extend_schema
 
-from .serializers import EmailAuthenticationLetterSendSerializer
+from .services import EmailAuthorizationLetterProcessingService
+from .serializers import EmailAuthenticationLetterSendInputSerializer
 from .models import User, EmailAuthorizationLetter
-from .tasks import send_mail
+from .selectors import get_user
 
 
 @extend_schema(responses={200: None})
 class EmailAuthorizationLetterSendView(GenericAPIView):
-    serializer_class = EmailAuthenticationLetterSendSerializer
 
     def post(self, request):
-        serializer = EmailAuthenticationLetterSendSerializer(data=request.data)
+        serializer = EmailAuthenticationLetterSendInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.data["email"]
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            user = None
+        is_exist, user = get_user(email=email)
+        if is_exist and user.account_type != User.SELLER:
+            auth_url = request.build_absolute_uri("/auth/email/{}/")
+            email_letter, _ = EmailAuthorizationLetterProcessingService(
+                user=user,
+                to_email=email,
+                auth_url=auth_url
+            )
 
-        if user and user.account_type != User.SELLER:
-            try:
-                EmailAuthorizationLetter.objects.get(user=user).delete()
-            except EmailAuthorizationLetter.DoesNotExist:
-                pass
-
-            email_letter = EmailAuthorizationLetter.objects.create(user=user)
-            uuid = email_letter.uuid
-            email_auth_uri = request.build_absolute_uri("/auth/email/{}/".format(uuid))
-
-            subject = "Test"
-            message = "{}".format(email_auth_uri)
-            send_mail.delay([email, ], subject, message)
         return Response(status=200)
 
 

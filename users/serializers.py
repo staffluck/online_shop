@@ -11,8 +11,10 @@ class UserSerializer(djoser_UserSerializer):
         fields = ['username', "email", "first_name", "last_name"]
         ref_name = "User 1"
 
+
 class UserCreateSerializer(djoser_UserCreateSerializer):
     pass
 
-class EmailAuthenticationLetterSendSerializer(serializers.Serializer):
+
+class EmailAuthenticationLetterSendInputSerializer(serializers.Serializer):
     email = serializers.EmailField()
