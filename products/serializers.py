@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
-from .models import Product, ProductItem, Deal
-from users.models import User
+from .models import Product, Deal
 from users.serializers import UserSerializer
 
 
