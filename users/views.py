@@ -1,4 +1,3 @@
-from codecs import lookup
 from django.utils import timezone
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
