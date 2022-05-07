@@ -8,7 +8,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema
 
 from common.pagination import get_paginated_response, get_paginated_response_schema
-from users.selectors import get_or_create_buyer_user
+from common.selectors_services import get_or_create_buyer_user
 from users.permissions import IsOwner, IsSeller, ReadOnly
 from .serializers import (
     DealOutputSerializer,
@@ -66,6 +66,7 @@ class ProductListCreateView(GenericAPIView):
             request=request,
             view=self
         )
+
 
 class ProductItemAddToProductView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
@@ -154,6 +155,7 @@ class DealListView(GenericAPIView):
             request=request,
             view=self
         )
+
 
 class DealStatusUpdateView(GenericAPIView):
     serializer_class = DealStatusUpdateInputSerializer
