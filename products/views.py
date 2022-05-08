@@ -16,10 +16,10 @@ from .serializers import (
     ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
-    ReviewOutputSerializer
+    ReviewOutputSerializer, ReviewInputSerializer
 )
 from .selectors import get_deal_by_uuid, get_deals_list, get_product_by_id, get_products_list, get_random_product_item, get_reviews_list
-from .services import deal_create, deal_update_status, product_create, product_item_create
+from .services import deal_create, deal_update_status, product_create, product_item_create, review_create
 from .models import Product, Deal, Review
 
 
@@ -175,7 +175,6 @@ class DealStatusUpdateView(GenericAPIView):
             return Response(status=400)
         deal_update_status(
             deal=deal,
-            uuid=validated_data["uuid"],
             status=validated_data["status"]
         )
 
@@ -191,7 +190,6 @@ class ReviewListCreateView(GenericAPIView):
         limit = serializers.IntegerField(required=False)
         offset = serializers.IntegerField(required=False)
         review_type = serializers.IntegerField(required=False)
-        product_id = serializers.IntegerField()
 
     @extend_schema(
         parameters=[
@@ -199,11 +197,14 @@ class ReviewListCreateView(GenericAPIView):
         ],
         responses=get_paginated_response_schema(ReviewOutputSerializer)
     )
-    def get(self, request):
+    def get(self, request, pk):
         filters_serializer = self.FilterSerializer(data=request.query_params)
         filters_serializer.is_valid(raise_exception=True)
 
-        queryset = get_reviews_list(filters=filters_serializer.validated_data)
+        queryset = get_reviews_list(
+            queryset=Review.objects.filter(product_id=pk),
+            filters=filters_serializer.validated_data
+        )
         return get_paginated_response(
             pagination_class=self.Pagination,
             serializer_class=ReviewOutputSerializer,
@@ -211,3 +212,16 @@ class ReviewListCreateView(GenericAPIView):
             request=request,
             view=self
         )
+
+    # @extend_schema(
+    #     parameters=[
+    #         FilterCreateSerializer
+    #     ]
+    # )
+    # def post(self, request):
+    #     serializer_input = ReviewInputSerializer(data=request.data)
+    #     serializer_input.is_valid(raise_exception=True)
+
+    #     is_exist, product = get_product_by_id(id=request.quer)
+
+    #     review = review_create()

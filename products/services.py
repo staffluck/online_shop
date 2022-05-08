@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser
 
 from users.models import User
 
-from .models import Product, ProductItem, Deal
+from .models import Product, ProductItem, Deal, Review
 from .utils import simulate_request_to_kassa
 
 
@@ -42,7 +42,7 @@ def deal_create(*, confirmation_url: str, product: Product, product_item: Produc
     return deal
 
 
-def deal_update_status(*, deal: Deal, uuid: str, status: str) -> None:
+def deal_update_status(*, deal: Deal, status: str) -> None:
     product_item = deal.product_item
     product = product_item.product
 
@@ -57,3 +57,15 @@ def deal_update_status(*, deal: Deal, uuid: str, status: str) -> None:
         deal.delete()
 
     return None
+
+
+def review_create(*, text: str, review_type: str) -> Review:
+    review = Review(
+        text=text,
+        review_type=review_type
+    )
+
+    review.full_clean()
+    review.save()
+
+    return review

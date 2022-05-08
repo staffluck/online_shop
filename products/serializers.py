@@ -63,6 +63,11 @@ class DealStatusUpdateInputSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class ReviewInputSerializer(serializers.Serializer):
+    review_type = serializers.IntegerField(min_value=0, max_value=1)
+    text = serializers.CharField()
+
+
 class ReviewOutputSerializer(serializers.Serializer):
     review_type = serializers.IntegerField()
     text = serializers.CharField()

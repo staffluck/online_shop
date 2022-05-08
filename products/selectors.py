@@ -25,15 +25,10 @@ class ProductFilter(django_filters.FilterSet):
 
 
 class ReviewFilter(django_filters.FilterSet):
-    product_id = django_filters.NumberFilter(method="get_product")
 
     class Meta:
         model = Review
-        fields = ["review_type", "product_id"]
-
-    def get_product(self, queryset, product_id, value):
-        print(queryset.first().product_id)
-        return queryset.filter(product__id=value)
+        fields = ["review_type"]
 
 
 class DealFilter(django_filters.FilterSet):
