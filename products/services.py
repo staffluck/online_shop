@@ -59,8 +59,9 @@ def deal_update_status(*, deal: Deal, status: str) -> None:
     return None
 
 
-def review_create(*, text: str, review_type: str) -> Review:
+def review_create(*, product: Product, text: str, review_type: str) -> Review:
     review = Review(
+        product=product,
         text=text,
         review_type=review_type
     )

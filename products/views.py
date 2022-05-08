@@ -1,3 +1,5 @@
+# TODO: Вынести serializer_input и serializer_output в атрибуты класса
+
 from rest_framework.generics import GenericAPIView
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -213,15 +215,22 @@ class ReviewListCreateView(GenericAPIView):
             view=self
         )
 
-    # @extend_schema(
-    #     parameters=[
-    #         FilterCreateSerializer
-    #     ]
-    # )
-    # def post(self, request):
-    #     serializer_input = ReviewInputSerializer(data=request.data)
-    #     serializer_input.is_valid(raise_exception=True)
+    @extend_schema(
+        request=ReviewInputSerializer
+    )
+    def post(self, request, pk):
+        serializer_input = ReviewInputSerializer(data=request.data)
+        serializer_input.is_valid(raise_exception=True)
 
-    #     is_exist, product = get_product_by_id(id=request.quer)
+        is_exist, product = get_product_by_id(id=pk)
+        if not is_exist:
+            raise NotFound()
 
-    #     review = review_create()
+        review = review_create(
+            product=product,
+            **serializer_input.validated_data
+        )
+
+        serializer_output = ReviewOutputSerializer(instance=review)
+        return Response(serializer_output.data, status=status.HTTP_201_CREATED)
+
