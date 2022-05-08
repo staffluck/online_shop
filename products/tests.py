@@ -43,7 +43,7 @@ class ProductTests(APITestCase):
             "status": "confirmed"
         }
 
-        self.product_create_url = reverse("product-list")
+        self.product_create_url = reverse("product-list-create")
         self.deal_update_status = reverse("deal-update-status")
 
         settings.EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

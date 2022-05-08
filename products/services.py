@@ -19,6 +19,7 @@ def product_create(*, name: str, price: int, description: str, owner: AbstractBa
 
     return product
 
+
 def product_item_create(*, product: Product, text: str) -> ProductItem:
     product_item = ProductItem(
         text=text,
@@ -39,6 +40,7 @@ def deal_create(*, confirmation_url: str, product: Product, product_item: Produc
     deal = Deal.objects.create(uuid=kassa_request["id"], buyer=buyer, product_item=product_item, cost=kassa_request["amount"]["value"])
 
     return deal
+
 
 def deal_update_status(*, deal: Deal, uuid: str, status: str) -> None:
     product_item = deal.product_item
