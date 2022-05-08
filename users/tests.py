@@ -23,7 +23,7 @@ class UserTests(APITestCase):
         self.assertEqual(User.objects.all().count(), 1)
 
     def test_wrong_data_create_user(self):
-        user = User.objects.create(**self.correct_user_data)
+        User.objects.create(**self.correct_user_data)
         response_repeated = self.client.post(self.user_list_url, self.correct_user_data)
 
         self.assertEqual(response_repeated.status_code, status.HTTP_400_BAD_REQUEST)
