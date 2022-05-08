@@ -1,5 +1,3 @@
-from random import choice
-
 from django.db import models
 from django.dispatch import receiver
 
@@ -49,3 +47,14 @@ class Deal(models.Model):
     cost = models.IntegerField("Итоговая стоимость")
 
     # messages = todo
+
+
+class Review(models.Model):
+
+    class Types(models.IntegerChoices):
+        NEGATIVE = 0
+        POSITIVE = 1
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+    review_type = models.IntegerField(choices=Types.choices)
+    text = models.TextField(max_length=255)

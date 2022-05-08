@@ -9,7 +9,7 @@ class ProductInputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        exclude = ["available", "purchased_count", "owner"]
+        exclude = ["available", "purchased_count", "owner", "reviews"]
 
 
 class ProductOutputSerializer(serializers.Serializer):
