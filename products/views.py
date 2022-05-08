@@ -16,10 +16,11 @@ from .serializers import (
     ProductBuyInputSerializer,
     ProductInputSerializer, ProductOutputSerializer,
     ProductItemInputSerializer, ProductItemOutputSerializer,
+    ReviewOutputSerializer
 )
-from .selectors import get_deal_by_uuid, get_deals_list, get_product_by_id, get_products_list, get_random_product_item
+from .selectors import get_deal_by_uuid, get_deals_list, get_product_by_id, get_products_list, get_random_product_item, get_reviews_list
 from .services import deal_create, deal_update_status, product_create, product_item_create
-from .models import Product, Deal
+from .models import Product, Deal, Review
 
 
 class ProductListCreateView(GenericAPIView):
@@ -179,3 +180,34 @@ class DealStatusUpdateView(GenericAPIView):
         )
 
         return Response(status=200)
+
+
+class ReviewListCreateView(GenericAPIView):
+
+    class Pagination(LimitOffsetPagination):
+        default_limit = 10
+
+    class FilterSerializer(serializers.Serializer):
+        limit = serializers.IntegerField(required=False)
+        offset = serializers.IntegerField(required=False)
+        review_type = serializers.IntegerField(required=False)
+        product_id = serializers.IntegerField()
+
+    @extend_schema(
+        parameters=[
+            FilterSerializer,
+        ],
+        responses=get_paginated_response_schema(ReviewOutputSerializer)
+    )
+    def get(self, request):
+        filters_serializer = self.FilterSerializer(data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+
+        queryset = get_reviews_list(filters=filters_serializer.validated_data)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=ReviewOutputSerializer,
+            queryset=queryset,
+            request=request,
+            view=self
+        )

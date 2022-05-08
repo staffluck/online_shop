@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from django.db.models import QuerySet
 
 from users.models import User
-from .models import Deal, Product, ProductItem
+from .models import Deal, Product, ProductItem, Review
 
 
 class ProductFilter(django_filters.FilterSet):
@@ -22,6 +22,18 @@ class ProductFilter(django_filters.FilterSet):
             return queryset.filter(owner=self.request.user)
         else:
             return queryset.exclude(owner=self.request.user)
+
+
+class ReviewFilter(django_filters.FilterSet):
+    product_id = django_filters.NumberFilter(method="get_product")
+
+    class Meta:
+        model = Review
+        fields = ["review_type", "product_id"]
+
+    def get_product(self, queryset, product_id, value):
+        print(queryset.first().product_id)
+        return queryset.filter(product__id=value)
 
 
 class DealFilter(django_filters.FilterSet):
@@ -83,3 +95,12 @@ def get_deal_by_uuid(*, uuid: int, queryset: Optional[QuerySet] = None) -> Union
     else:
         response = (False, [])
     return response
+
+
+def get_reviews_list(*, queryset: Optional[QuerySet] = None, filters: Optional[dict] = None) -> QuerySet[Review]:
+    if not filters:
+        filters = {}
+    if queryset is None:
+        queryset = Review.objects.all()
+
+    return ReviewFilter(filters, queryset).qs

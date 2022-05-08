@@ -9,7 +9,7 @@ class ProductInputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        exclude = ["available", "purchased_count", "owner", "reviews"]
+        exclude = ["available", "purchased_count", "owner"]
 
 
 class ProductOutputSerializer(serializers.Serializer):
@@ -61,3 +61,8 @@ class ProductBuyInputSerializer(serializers.Serializer):
 class DealStatusUpdateInputSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     status = serializers.CharField()
+
+
+class ReviewOutputSerializer(serializers.Serializer):
+    review_type = serializers.IntegerField()
+    text = serializers.CharField()
