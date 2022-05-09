@@ -223,6 +223,7 @@ class DealStatusUpdateView(GenericAPIView):
 
 class ReviewListCreateView(GenericAPIView):
     serializer_class = ReviewOutputSerializer
+    permission_classes = [IsAuthenticated | ReadOnly]
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
@@ -257,7 +258,7 @@ class ReviewListCreateView(GenericAPIView):
     @extend_schema(
         request=ReviewInputSerializer
     )
-    def post(self, request, pk):
+    def post(self, request, pk):  # ServiceClass ? TODO
         serializer_input = ReviewInputSerializer(data=request.data)
         serializer_input.is_valid(raise_exception=True)
 
@@ -266,6 +267,7 @@ class ReviewListCreateView(GenericAPIView):
             raise NotFound()
 
         review = review_create(
+            user=request.user,
             product=product,
             **serializer_input.validated_data
         )

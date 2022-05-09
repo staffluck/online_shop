@@ -72,7 +72,7 @@ def get_deals_list(*, user: User, queryset: Optional[QuerySet] = None, filters: 
     if queryset is None:
         queryset = Deal.objects.select_related("product_item").all()
 
-    if user.account_type == User.SELLER:
+    if user.account_type == User.AccountTypes.SELLER:
         queryset = queryset.filter(product_item__product__owner=user)
     else:
         queryset = queryset.filter(buyer=user)

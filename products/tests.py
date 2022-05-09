@@ -48,9 +48,9 @@ class ProductTests(APITestCase):
 
         settings.EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-        self.seller = User.objects.create_user(account_type=User.SELLER, **self.correct_seller_data)
-        self.wrong_seller = User.objects.create_user(account_type=User.SELLER, **self.wrong_seller_data)
-        self.buyer = User.objects.create_user(account_type=User.BUYER, **self.correct_buyer_data)
+        self.seller = User.objects.create_user(account_type=User.AccountTypes.SELLER, **self.correct_seller_data)
+        self.wrong_seller = User.objects.create_user(account_type=User.AccountTypes.SELLER, **self.wrong_seller_data)
+        self.buyer = User.objects.create_user(account_type=User.AccountTypes.BUYER, **self.correct_buyer_data)
 
         self.product = Product.objects.create(owner=self.seller, **self.correct_product_data)
         self.product_item = ProductItem.objects.create(product=self.product, text={"TestItem"})

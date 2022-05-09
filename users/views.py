@@ -22,7 +22,7 @@ class EmailAuthorizationLetterSendView(GenericAPIView):
 
         email = serializer.data["email"]
         is_exist, user = get_user(email=email)
-        if is_exist and user.account_type != User.SELLER:
+        if is_exist and user.account_type != User.AccountTypes.SELLER:
             auth_url = request.build_absolute_uri("/auth/email/")
             email_service = EmailAuthorizationLetterSendService(
                 user=user,

@@ -15,14 +15,14 @@ class IsSeller(BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return user.account_type == User.SELLER
+        return user.account_type == User.AccountTypes.SELLER
 
 
 class IsBuyer(BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return user.account_type == User.Buyer
+        return user.account_type == User.AccountTypes.BUYER
 
 
 class ReadOnly(BasePermission):
