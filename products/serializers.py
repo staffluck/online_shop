@@ -32,6 +32,7 @@ class ProductItemOutputSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     text = serializers.CharField()
     available = serializers.BooleanField()
+    product_id = serializers.IntegerField()
 
 
 class DealOutputSerializer(serializers.ModelSerializer):
@@ -44,16 +45,10 @@ class DealOutputSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(ProductOutputSerializer)
     def get_product_item(self, obj):
-        if obj.status == "confirmed":
-            return ProductOutputSerializer(obj.product_item).data
-
-        serializer = ProductOutputSerializer(obj.product_item.product)
-        hidden_data = {
-            "id": "-1",
-            "product": serializer.data,
-            "text": "-",
-        }
-        return hidden_data
+        if not obj.status == Deal.CONFIRMED:
+            obj.product_item.id = -1
+            obj.product_item.text = "-"
+        return ProductItemOutputSerializer(obj.product_item).data
 
 
 class ProductBuyInputSerializer(serializers.Serializer):
