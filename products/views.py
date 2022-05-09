@@ -20,8 +20,16 @@ from .serializers import (
     ProductItemInputSerializer, ProductItemOutputSerializer,
     ReviewOutputSerializer, ReviewInputSerializer
 )
-from .selectors import get_deal_by_uuid, get_deals_list, get_product_by_id, get_products_list, get_random_product_item, get_reviews_list
-from .services import deal_create, deal_update_status, product_create, product_item_create, review_create
+from .selectors import (
+    get_deal_by_uuid, get_deals_list,
+    get_product_by_id, get_products_list, get_random_product_item,
+    get_reviews_list
+)
+from .services import (
+    deal_create, deal_update_status,
+    product_create, product_item_create,
+    review_create
+)
 from .models import Product, Deal, Review
 
 
@@ -69,6 +77,18 @@ class ProductListCreateView(GenericAPIView):
             request=request,
             view=self
         )
+
+
+class ProductDetailView(GenericAPIView):
+    serializer_class = ProductOutputSerializer
+
+    def get(self, request, pk):
+        is_exist, product = get_product_by_id(id=pk)
+        if not is_exist:
+            raise NotFound()
+
+        serializer_output = ProductOutputSerializer(instance=product)
+        return Response(serializer_output.data, status=status.HTTP_200_OK)
 
 
 class ProductItemAddToProductView(GenericAPIView):
@@ -175,6 +195,7 @@ class DealStatusUpdateView(GenericAPIView):
         )
         if not is_exist:
             return Response(status=400)
+
         deal_update_status(
             deal=deal,
             status=validated_data["status"]
@@ -184,6 +205,7 @@ class DealStatusUpdateView(GenericAPIView):
 
 
 class ReviewListCreateView(GenericAPIView):
+    serializer_class = ReviewOutputSerializer
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
@@ -233,4 +255,3 @@ class ReviewListCreateView(GenericAPIView):
 
         serializer_output = ReviewOutputSerializer(instance=review)
         return Response(serializer_output.data, status=status.HTTP_201_CREATED)
-

@@ -19,6 +19,8 @@ class ProductOutputSerializer(serializers.Serializer):
     description = serializers.CharField()
     purchased_count = serializers.IntegerField()
     available = serializers.BooleanField()
+    negative_reviews_count = serializers.IntegerField()
+    positive_reviews_count = serializers.IntegerField()
     owner = UserSerializer()
 
 

@@ -12,6 +12,14 @@ class Product(models.Model):
     purchased_count = models.IntegerField("Количество купленных копий", default=0)
     available = models.BooleanField(default=False)
 
+    @property
+    def negative_reviews_count(self):
+        return self.reviews.filter(review_type=Review.Types.NEGATIVE).count()
+
+    @property
+    def positive_reviews_count(self):
+        return self.reviews.filter(review_type=Review.Types.POSITIVE).count()
+
 
 class ProductItem(models.Model):
     product = models.ForeignKey(Product, models.SET_NULL, related_name="items", verbose_name="Продукт", null=True)
