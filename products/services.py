@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser
+from rest_framework.exceptions import PermissionDenied
 
 from users.models import User
-
 from .models import Product, ProductItem, Deal, Review
 from .utils import simulate_request_to_kassa
 
@@ -59,8 +59,13 @@ def deal_update_status(*, deal: Deal, status: str) -> None:
     return None
 
 
-def review_create(*, product: Product, text: str, review_type: str) -> Review:
+def review_create(*, user: User, product: Product, text: str, review_type: str) -> Review:
+    if not Review.objects.filter(user=user, product=product).exists():
+        if not Deal.objects.filter(status=Deal.CONFIRMED, buyer=user, product_item__product=product).exists():
+            raise PermissionDenied()
+
     review = Review(
+        user=user,
         product=product,
         text=text,
         review_type=review_type
