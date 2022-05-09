@@ -11,6 +11,7 @@ def get_expire_time():
     expire_minutes = settings.EMAIL_AUTHORIZATION_EXPIRE
     return timezone.now() + timedelta(minutes=expire_minutes)
 
+
 class UserManager(django_UserManager):
 
     def create_user(self, email, **kwargs):
@@ -18,20 +19,19 @@ class UserManager(django_UserManager):
 
 
 class User(AbstractUser):
-    BUYER = 0
-    SELLER = 1
-    ACCOUNT_TYPES = (
-        (BUYER, "Buyer"),
-        (SELLER, "Seller"),
-    )
 
-    account_type = models.IntegerField(default=SELLER, choices=ACCOUNT_TYPES)
+    class AccountTypes(models.IntegerChoices):
+        BUYER = 0
+        SELLER = 1
+
+    account_type = models.IntegerField(default=AccountTypes.BUYER, choices=AccountTypes.choices)
     email = models.EmailField("Почтовый адрес", unique=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
 
 class EmailAuthorizationLetter(models.Model):
     user = models.OneToOneField(User, models.CASCADE)
