@@ -66,3 +66,7 @@ class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     review_type = models.IntegerField(choices=Types.choices)
     text = models.TextField(max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+
+    class Meta:
+        unique_together = (("user", "product"), )
