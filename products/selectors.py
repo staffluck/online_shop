@@ -92,6 +92,18 @@ def get_deal_by_uuid(*, uuid: int, queryset: Optional[QuerySet] = None) -> Union
     return response
 
 
+def get_deal_by_id(*, id: int, queryset: Optional[QuerySet] = None) -> Union[Tuple[bool, List], Tuple[bool, Deal]]:
+    if queryset is None:
+        queryset = Deal.objects.select_related("product_item", "product_item__product", "product_item__product__owner").all()
+
+    queryset = queryset.filter(id=id)
+    if queryset.exists():
+        response = (True, queryset.first())
+    else:
+        response = (False, [])
+    return response
+
+
 def get_reviews_list(*, queryset: Optional[QuerySet] = None, filters: Optional[dict] = None) -> QuerySet[Review]:
     if not filters:
         filters = {}

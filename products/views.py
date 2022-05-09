@@ -21,7 +21,7 @@ from .serializers import (
     ReviewOutputSerializer, ReviewInputSerializer
 )
 from .selectors import (
-    get_deal_by_uuid, get_deals_list,
+    get_deal_by_id, get_deal_by_uuid, get_deals_list,
     get_product_by_id, get_products_list, get_random_product_item,
     get_reviews_list
 )
@@ -178,6 +178,17 @@ class DealListView(GenericAPIView):
             request=request,
             view=self
         )
+
+
+class DealDetailView(GenericAPIView):
+
+    def get(self, request, pk):
+        is_exist, deal = get_deal_by_id(id=pk)
+        if not is_exist:
+            raise NotFound()
+
+        serializer_output = DealOutputSerializer(instance=deal)
+        return Response(serializer_output.data, status=status.HTTP_200_OK)
 
 
 class DealStatusUpdateView(GenericAPIView):
