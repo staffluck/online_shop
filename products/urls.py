@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     ProductListCreateView, ProductItemAddToProductView, ProductBuyView, ProductDetailView,
-    DealListView, DealStatusUpdateView,
+    DealListView, DealStatusUpdateView, DealDetailView,
     ReviewListCreateView
 )
 
@@ -13,5 +13,6 @@ urlpatterns = [
     path("<int:pk>/buy/", ProductBuyView.as_view(), name="product-buy"),
     path("<int:pk>/reviews/", ReviewListCreateView.as_view(), name="review-list-create"),
     path("deals/", DealListView.as_view(), name="deal-list"),
+    path("deals/<int:pk>/", DealDetailView.as_view(), name="deal-detail"),
     path("deals/update_status/", DealStatusUpdateView.as_view(), name="deal-update-status"),
 ]

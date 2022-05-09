@@ -1,5 +1,6 @@
 # TODO: Вынести serializer_input и serializer_output в атрибуты класса
 
+from django.db.models import Q
 from rest_framework.generics import GenericAPIView
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -181,9 +182,14 @@ class DealListView(GenericAPIView):
 
 
 class DealDetailView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        is_exist, deal = get_deal_by_id(id=pk)
+        owner_or_buyer_query = Q(product_item__product__owner=request.user) | Q(buyer=request.user)
+        is_exist, deal = get_deal_by_id(
+            id=pk,
+            queryset=Deal.objects.filter(owner_or_buyer_query).select_related("product_item")
+        )
         if not is_exist:
             raise NotFound()
 
